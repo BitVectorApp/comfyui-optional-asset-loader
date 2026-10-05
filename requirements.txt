@@ -1,0 +1,6 @@
+torch>=2.0.0
+numpy>=1.20.0
+Pillow>=9.0.0
+# Optional for video loading:
+# av>=10.0.0
+# opencv-python

@@ -1,0 +1,17 @@
+[project]
+name = "comfyui-optional-asset-loader"
+version = "1.0.0"
+description = "ComfyUI custom nodes for handling optional/nullable image, video, and audio assets gracefully."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.20.0",
+    "pillow>=9.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/bitvector/comfyui-optional-asset-loader"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
