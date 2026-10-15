@@ -6,6 +6,7 @@ Designed for cloud APIs (Graydient, RunPod, etc.) and models with nullable input
 
 try:
     from .nodes import (
+        BooleanLogic,
         LoadImageOptional,
         LoadVideoOptional,
         NullableConstant,
@@ -15,6 +16,7 @@ try:
     )
 except (ImportError, ValueError):
     from nodes import (
+        BooleanLogic,
         LoadImageOptional,
         LoadVideoOptional,
         NullableConstant,
@@ -30,6 +32,7 @@ NODE_CLASS_MAPPINGS = {
     "OptionalImageGate": OptionalImageGate,
     "OptionalVideoGate": OptionalVideoGate,
     "NullableConstant": NullableConstant,
+    "BooleanLogic": BooleanLogic,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -39,6 +42,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OptionalImageGate": "Optional Image Gate",
     "OptionalVideoGate": "Optional Video Gate",
     "NullableConstant": "Nullable Constant (None)",
+    "BooleanLogic": "Boolean Logic",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

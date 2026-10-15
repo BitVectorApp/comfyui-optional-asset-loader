@@ -140,6 +140,14 @@ Outputs a pure Python `None` value for wildcard `*` connections. Completely repl
 
 ---
 
+### 7. `Boolean Logic` (`BooleanLogic`)
+Performs boolean logic (`AND`, `OR`, `XOR`, `NOT_A`) on two inputs. Ideal for combining workflow triggers (e.g. `has_video AND should_combine`).
+
+* **Inputs:** `operation` (`COMBO`), `a` (`BOOLEAN`), `b` (`BOOLEAN`).
+* **Outputs:** `result` (`BOOLEAN`).
+
+---
+
 ## Graydient Integration Guide
 
 When using Graydient:

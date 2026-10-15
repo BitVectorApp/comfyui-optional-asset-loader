@@ -470,3 +470,38 @@ class NullableConstant:
 
     def get_none(self, label: str = "None (Null)") -> Tuple[Any]:
         return (None,)
+
+
+class BooleanLogic:
+    """Performs boolean operations (AND, OR, NOT, XOR) on boolean inputs.
+    
+    Useful for combining conditional workflow flags (e.g., has_video AND should_combine).
+    """
+
+    @classmethod
+    def INPUT_TYPES(s) -> Dict[str, Any]:
+        return {
+            "required": {
+                "operation": (["AND", "OR", "XOR", "NOT_A"], {"default": "AND"}),
+            },
+            "optional": {
+                "a": ("BOOLEAN", {"default": False}),
+                "b": ("BOOLEAN", {"default": False}),
+            },
+        }
+
+    RETURN_TYPES = ("BOOLEAN",)
+    RETURN_NAMES = ("result",)
+    FUNCTION = "op"
+    CATEGORY = "optional_loaders"
+
+    def op(self, operation: str = "AND", a: bool = False, b: bool = False) -> Tuple[bool]:
+        if operation == "AND":
+            return (bool(a and b),)
+        elif operation == "OR":
+            return (bool(a or b),)
+        elif operation == "XOR":
+            return (bool(a != b),)
+        elif operation == "NOT_A":
+            return (bool(not a),)
+        return (False,)

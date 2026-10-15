@@ -7,6 +7,7 @@ import pytest
 from PIL import Image
 
 from nodes import (
+    BooleanLogic,
     LoadImageOptional,
     LoadVideoOptional,
     NullableConstant,
@@ -232,3 +233,15 @@ def test_nullable_constant():
     node = NullableConstant()
     (res,) = node.get_none()
     assert res is None
+
+
+def test_boolean_logic():
+    node = BooleanLogic()
+    assert node.op("AND", True, True) == (True,)
+    assert node.op("AND", True, False) == (False,)
+    assert node.op("OR", False, True) == (True,)
+    assert node.op("OR", False, False) == (False,)
+    assert node.op("NOT_A", True, False) == (False,)
+    assert node.op("NOT_A", False, False) == (True,)
+    assert node.op("XOR", True, False) == (True,)
+    assert node.op("XOR", True, True) == (False,)
