@@ -86,13 +86,16 @@ Loads video frames and audio if available; otherwise returns `None` safely.
   * `frame_load_cap` (`INT`, default: `0`): Maximum frames to load (`0` = all).
   * `skip_first_frames` (`INT`, default: `0`): Skip initial frames.
   * `select_every_nth` (`INT`, default: `1`): Frame sampling rate.
+  * `trim_last_seconds` (`FLOAT`, default: `0.0`): Automatically trim the video and audio to the last X seconds directly in memory (`0.0` = disabled).
   * `blank_width` / `blank_height` / `blank_frames` (`INT`): Dimensions for blank video tensor mode.
+  * `default_fps` (`FLOAT`, default: `24.0`): Fallback frame rate returned when blank or missing to prevent division by zero in downstream video math nodes.
 * **Outputs:**
   * `IMAGE` (`IMAGE`): Video frames tensor `[N, H, W, 3]` or `None`.
   * `AUDIO` (`AUDIO`): Audio dictionary `{"waveform": ..., "sample_rate": ...}` or `None`.
   * `has_video` (`BOOLEAN`): `True` if valid video loaded, `False` otherwise.
-  * `frame_count` (`INT`): Number of frames loaded (or `0`).
-  * `fps` (`FLOAT`): Frame rate (or `0.0`).
+  * `frame_count` (`INT`): Number of frames loaded (or `blank_frames` when blank tensor mode).
+  * `fps` (`FLOAT`): Frame rate (or `default_fps`).
+  * `duration` (`FLOAT`): Duration in seconds (`frame_count / fps`).
   * `resolved_path` (`STRING`): Absolute file path on disk, or `""`.
 
 ---

@@ -221,14 +221,15 @@ def load_video_to_tensor(
     frame_load_cap: int = 0,
     skip_first_frames: int = 0,
     select_every_nth: int = 1,
-) -> Tuple[Any, Optional[Dict[str, Any]], int, float]:
+    trim_last_seconds: float = 0.0,
+) -> Tuple[Any, Optional[Dict[str, Any]], int, float, float]:
     """Load video frames into an IMAGE tensor [N, H, W, 3] and extract AUDIO if available.
     
-    Returns (video_frames_tensor, audio_dict_or_none, frame_count, fps).
+    Returns (video_frames_tensor, audio_dict_or_none, frame_count, fps, duration).
     Supports PyAV (av), OpenCV (cv2), or imageio based on what is installed.
     """
     frames = []
-    fps = 30.0
+    fps = 24.0
     audio_dict = None
 
     # Try PyAV (best quality & audio support)
@@ -327,7 +328,7 @@ def load_video_to_tensor(
 
                 reader = imageio.get_reader(file_path)
                 meta = reader.get_meta_data()
-                fps = float(meta.get("fps", 30.0))
+                fps = float(meta.get("fps", 24.0))
                 frame_idx = 0
                 loaded_count = 0
                 for img in reader:
@@ -351,10 +352,26 @@ def load_video_to_tensor(
     if not frames:
         raise ValueError(f"No frames could be extracted from video file {file_path}")
 
+    # Calculate duration
+    duration = float(len(frames)) / max(fps, 0.001)
+
+    # Optional trim last X seconds
+    if trim_last_seconds > 0.0 and duration > trim_last_seconds:
+        frames_to_keep = max(1, int(round(fps * trim_last_seconds)))
+        frames = frames[-frames_to_keep:]
+        duration = float(len(frames)) / max(fps, 0.001)
+
+        if audio_dict and "waveform" in audio_dict:
+            wf = audio_dict["waveform"]
+            sr = audio_dict.get("sample_rate", 44100)
+            samples_to_keep = int(sr * trim_last_seconds)
+            if hasattr(wf, "shape") and wf.shape[-1] > samples_to_keep:
+                audio_dict["waveform"] = wf[..., -samples_to_keep:]
+
     frames_np = np.stack(frames, axis=0)
     if torch is not None:
         frames_tensor = torch.from_numpy(frames_np)
     else:
         frames_tensor = frames_np
 
-    return frames_tensor, audio_dict, len(frames), fps
+    return frames_tensor, audio_dict, len(frames), fps, duration

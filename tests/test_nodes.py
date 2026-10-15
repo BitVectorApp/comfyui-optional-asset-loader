@@ -91,28 +91,33 @@ def test_load_image_optional_valid_file():
 def test_load_video_optional_fallback():
     node = LoadVideoOptional()
     # Return None
-    frames, audio, has_video, count, fps, path = node.load(
+    frames, audio, has_video, count, fps, duration, path = node.load(
         video_path="blank_start.mp4", missing_behavior="Return None"
     )
     assert frames is None
     assert audio is None
     assert has_video is False
     assert count == 0
-    assert fps == 0.0
+    assert fps == 24.0
+    assert duration == 0.0
     assert path == ""
 
     # Return Blank Tensor
-    frames, audio, has_video, count, fps, path = node.load(
+    frames, audio, has_video, count, fps, duration, path = node.load(
         video_path="",
         missing_behavior="Return Blank Tensor",
         blank_width=128,
         blank_height=64,
-        blank_frames=2,
+        blank_frames=48,
+        default_fps=24.0,
     )
     assert frames is not None
     assert audio is None
     assert has_video is False
-    assert frames.shape == (2, 64, 128, 3)
+    assert count == 48
+    assert fps == 24.0
+    assert duration == 2.0
+    assert frames.shape == (48, 64, 128, 3)
 
 
 def test_optional_dimension_filter():

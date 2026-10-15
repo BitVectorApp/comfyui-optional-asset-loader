@@ -130,8 +130,8 @@ class LoadVideoOptional:
     """Loads video frames and audio if provided and valid.
     
     If the video file is missing, empty, or matches a fallback placeholder name
-    (e.g., 'blank_start.mp4'), this node safely returns Python None for both video
-    and audio, avoiding graph crashes or complex workaround chains.
+    (e.g., 'blank_start.mp4'), this node safely returns Python None (or a blank tensor),
+    avoiding graph crashes or ZeroDivisionError in downstream nodes.
     """
 
     @classmethod
@@ -155,14 +155,16 @@ class LoadVideoOptional:
                 "frame_load_cap": ("INT", {"default": 0, "min": 0, "max": 100000, "step": 1}),
                 "skip_first_frames": ("INT", {"default": 0, "min": 0, "max": 100000, "step": 1}),
                 "select_every_nth": ("INT", {"default": 1, "min": 1, "max": 100, "step": 1}),
+                "trim_last_seconds": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1000.0, "step": 0.1}),
                 "blank_width": ("INT", {"default": 512, "min": 1, "max": 8192, "step": 8}),
                 "blank_height": ("INT", {"default": 512, "min": 1, "max": 8192, "step": 8}),
-                "blank_frames": ("INT", {"default": 1, "min": 1, "max": 1000, "step": 1}),
+                "blank_frames": ("INT", {"default": 64, "min": 1, "max": 1000, "step": 1}),
+                "default_fps": ("FLOAT", {"default": 24.0, "min": 1.0, "max": 240.0, "step": 0.01}),
             },
         }
 
-    RETURN_TYPES = ("IMAGE", "AUDIO", "BOOLEAN", "INT", "FLOAT", "STRING")
-    RETURN_NAMES = ("IMAGE", "AUDIO", "has_video", "frame_count", "fps", "resolved_path")
+    RETURN_TYPES = ("IMAGE", "AUDIO", "BOOLEAN", "INT", "FLOAT", "FLOAT", "STRING")
+    RETURN_NAMES = ("IMAGE", "AUDIO", "has_video", "frame_count", "fps", "duration", "resolved_path")
     FUNCTION = "load"
     CATEGORY = "optional_loaders"
 
@@ -174,10 +176,12 @@ class LoadVideoOptional:
         frame_load_cap: int = 0,
         skip_first_frames: int = 0,
         select_every_nth: int = 1,
+        trim_last_seconds: float = 0.0,
         blank_width: int = 512,
         blank_height: int = 512,
-        blank_frames: int = 1,
-    ) -> Tuple[Any, Any, bool, int, float, str]:
+        blank_frames: int = 64,
+        default_fps: float = 24.0,
+    ) -> Tuple[Any, Any, bool, int, float, float, str]:
         if is_fallback_asset(video_path, fallback_patterns):
             return self._handle_missing(
                 video_path,
@@ -185,6 +189,7 @@ class LoadVideoOptional:
                 blank_width,
                 blank_height,
                 blank_frames,
+                default_fps,
                 reason="Video path matched fallback pattern or was empty",
             )
 
@@ -196,17 +201,19 @@ class LoadVideoOptional:
                 blank_width,
                 blank_height,
                 blank_frames,
+                default_fps,
                 reason=f"Video file '{video_path}' could not be found on disk",
             )
 
         try:
-            frames, audio, frame_count, fps = load_video_to_tensor(
+            frames, audio, frame_count, fps, duration = load_video_to_tensor(
                 resolved,
                 frame_load_cap=frame_load_cap,
                 skip_first_frames=skip_first_frames,
                 select_every_nth=select_every_nth,
+                trim_last_seconds=trim_last_seconds,
             )
-            return (frames, audio, True, frame_count, fps, resolved)
+            return (frames, audio, True, frame_count, fps, duration, resolved)
         except Exception as e:
             if missing_behavior == "Raise Error":
                 raise e
@@ -216,6 +223,7 @@ class LoadVideoOptional:
                 blank_width,
                 blank_height,
                 blank_frames,
+                default_fps,
                 reason=f"Failed to load video '{resolved}': {e}",
             )
 
@@ -226,17 +234,20 @@ class LoadVideoOptional:
         width: int,
         height: int,
         frames: int,
+        fps: float,
         reason: str,
-    ) -> Tuple[Any, Any, bool, int, float, str]:
+    ) -> Tuple[Any, Any, bool, int, float, float, str]:
         if behavior == "Raise Error":
             raise FileNotFoundError(f"LoadVideoOptional: {reason} (input='{video_path}')")
 
+        safe_fps = max(float(fps), 1.0)
         if behavior == "Return Blank Tensor":
             blank_frames = create_blank_image_tensor(width, height, color="black", batch_size=frames)
-            return (blank_frames, None, False, 0, 0.0, "")
+            duration = float(frames) / safe_fps
+            return (blank_frames, None, False, frames, safe_fps, duration, "")
 
-        # Default: Return None
-        return (None, None, False, 0, 0.0, "")
+        # Default: Return None (safe fps provided to prevent ZeroDivisionError if fps output is connected)
+        return (None, None, False, 0, safe_fps, 0.0, "")
 
 
 class OptionalDimensionFilter:
